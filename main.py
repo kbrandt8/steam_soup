@@ -28,17 +28,67 @@ def get_games(USER_ID):
     return top_games
 
 
-def get_tags(games_list):
-    game_tags = []
-    for game in games_list:
+def get_game_info(list):
+    games = []
+    for key, game in enumerate(list):
         game_url = f"https://store.steampowered.com/app/{game['id']}/"
         get_game_data = requests.get(game_url)
         soup = BeautifulSoup(get_game_data.content, "html.parser")
-        game_info = soup.find_all('a', attrs={'class': 'app_tag'})
-        for link in game_info:
-            game_tags.append({'tag': link.text.strip(), 'url': link['href']})
-    return game_tags
+        game_tags = soup.find_all('a', attrs={'class': 'app_tag'})
+        game_genres = soup.find('div', attrs={'id':'genresAndManufacturer'})
+        all_genres = game_genres.find_all('span')
+        genres = []
+        for genre in all_genres:
+            text = genre.text
+            new_list = text.split(",")
+            for item in new_list:
+                genres.append(item.strip())
 
+        game_name = soup.find('div', attrs={'id': 'appHubAppName_responsive'})
+        tags = []
+        for tag in game_tags:
+            tags.append({'title': tag.text.strip(), 'url': tag['href']})
+        games.append({'key': key, 'id': game['id'], 'title': game_name.text, 'url': game_url, 'time': game['time'],
+                      'tags': tags,'genres':genres})
+
+    return games
+
+
+def get_tags(games_list):
+    all_tags = []
+    for game in games_list:
+        for tag in game['tags']:
+            all_tags.append(tag['title'])
+    return all_tags
+
+
+def favorite_tags(tag_list):
+    tags_tally = {}
+    for tag in tag_list:
+        if tag in tags_tally:
+            tags_tally[tag] += 1
+        else:
+            tags_tally[tag] = 1
+    sorted_tally = sorted(tags_tally.items(), key=lambda item: item[1], reverse=True)
+    return dict(sorted_tally[0:10])
+
+def get_genres(games_list):
+    all_genres = []
+    for game in games_list:
+        for genre in game['genres']:
+            all_genres.append(genre)
+    return all_genres
+
+def get_top_genres(genres):
+    genre_tally = {}
+    for genre in genres:
+        if genre in genre_tally:
+            genre_tally[genre] +=1
+        else:
+            genre_tally[genre] = 1
+
+    sorted_tally = sorted(genre_tally.items(), key=lambda item: item[1], reverse=True)
+    return dict(sorted_tally[0:10])
 
 while SUGGESTED_GAMES['ready_for_data']:
     user = input("Please input your Steam Username or id:\n")
@@ -46,8 +96,18 @@ while SUGGESTED_GAMES['ready_for_data']:
     USER_ID = get_id(user)
     print("Accessing User game list...")
     games = get_games(USER_ID)
+    print("Getting Game Info...")
+    games_info = get_game_info(games)
+    game_titles = []
+    for game in games_info:
+        game_titles.append(game['title'])
+    print(f"\nYour Top 15 games: \n-  {"\n-  ".join(game_titles)}\n")
     print("Finding all game tags...")
-    all_game_tags = get_tags(games)
-    print(all_game_tags)
-
+    all_game_tags = get_tags(games_info)
+    print("Tallying tags...")
+    favorites = favorite_tags(all_game_tags)
+    print(f"\nYour Top Ten tags: \n-  {'\n-  '.join(list(favorites.keys()))}\n")
+    all_genres = get_genres(games_info)
+    genres = get_top_genres(all_genres)
+    print(f"\nYour Top Ten Genres: \n-  {'\n-  '.join(list(genres.keys()))}\n")
     SUGGESTED_GAMES.update({"ready_for_data": False})
