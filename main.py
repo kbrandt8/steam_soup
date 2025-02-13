@@ -58,7 +58,7 @@ def get_tags(games_list):
     all_tags = []
     for game in games_list:
         for tag in game['tags']:
-            all_tags.append(tag['title'])
+            all_tags.append(tag)
     return all_tags
 
 
@@ -90,6 +90,33 @@ def get_top_genres(genres):
     sorted_tally = sorted(genre_tally.items(), key=lambda item: item[1], reverse=True)
     return dict(sorted_tally[0:10])
 
+
+def new_games(games):
+    new_game_ids = []
+    for game in games:
+        game_url = f"https://store.steampowered.com/recommended/morelike/app/{game['id']}/"
+        get_game_data = requests.get(game_url)
+        soup = BeautifulSoup(get_game_data.content, "html.parser")
+        new_games = soup.find_all('a', attrs={'class': 'similar_grid_capsule'})
+        for game in new_games[0:9]:
+            id = int(game['data-ds-appid'])
+            if id not in new_game_ids:
+                new_game_ids.append(id)
+    return_games = [{"id":game} for game in new_game_ids]
+    return return_games
+
+
+def top_new_games(owned_games,games,tags):
+    new_games = []
+    for game in games:
+        games_tags= list(set(game['tags']) & set(tags))
+        new_games.append({"title":game['title'],"id":game['id'], "tags":games_tags})
+    sorted_games = sorted(new_games, key=lambda x: len(x['tags']), reverse=True)
+    owned_simplified = [game['id'] for game in owned_games]
+    return_games = [game for game in sorted_games if game['id'] not in owned_simplified]
+    return return_games[0:15]
+
+
 while SUGGESTED_GAMES['ready_for_data']:
     user = input("Please input your Steam Username or id:\n")
     print("Getting user info...")
@@ -105,9 +132,19 @@ while SUGGESTED_GAMES['ready_for_data']:
     print("Finding all game tags...")
     all_game_tags = get_tags(games_info)
     print("Tallying tags...")
-    favorites = favorite_tags(all_game_tags)
-    print(f"\nYour Top Ten tags: \n-  {'\n-  '.join(list(favorites.keys()))}\n")
+    tags = favorite_tags(all_game_tags)
+    print(f"\nYour Top Ten tags: \n-  {'\n-  '.join(list(tags.keys()))}\n")
     all_genres = get_genres(games_info)
     genres = get_top_genres(all_genres)
     print(f"\nYour Top Ten Genres: \n-  {'\n-  '.join(list(genres.keys()))}\n")
+    new_game_suggestions = new_games(games_info)
+    print("Finding games based on your favorites...")
+    new_games_info = get_game_info(new_game_suggestions)
+    print("Finding information on your suggestions...")
+    suggested_games = top_new_games(games_info,new_games_info,tags)
+    print("Ranking your suggestions...")
+    suggested_games_titles= [game['title'] for game in suggested_games]
+    print(f"\nYour Top 15 suggested games: \n-  {"\n-  ".join(suggested_games_titles)}\n")
+
+
     SUGGESTED_GAMES.update({"ready_for_data": False})
