@@ -35,7 +35,7 @@ def get_game_info(list):
         get_game_data = requests.get(game_url)
         soup = BeautifulSoup(get_game_data.content, "html.parser")
         game_tags = soup.find_all('a', attrs={'class': 'app_tag'})
-        game_genres = soup.find('div', attrs={'id':'genresAndManufacturer'})
+        game_genres = soup.find('div', attrs={'id': 'genresAndManufacturer'})
         all_genres = game_genres.find_all('span')
         genres = []
         for genre in all_genres:
@@ -47,9 +47,9 @@ def get_game_info(list):
         game_name = soup.find('div', attrs={'id': 'appHubAppName_responsive'})
         tags = []
         for tag in game_tags:
-            tags.append({'title': tag.text.strip(), 'url': tag['href']})
-        games.append({'key': key, 'id': game['id'], 'title': game_name.text, 'url': game_url, 'time': game['time'],
-                      'tags': tags,'genres':genres})
+            tags.append(tag.text.strip())
+        games.append({'key': key, 'id': game['id'], 'title': game_name.text, 'url': game_url,
+                      'tags': tags, 'genres': genres})
 
     return games
 
@@ -72,6 +72,7 @@ def favorite_tags(tag_list):
     sorted_tally = sorted(tags_tally.items(), key=lambda item: item[1], reverse=True)
     return dict(sorted_tally[0:10])
 
+
 def get_genres(games_list):
     all_genres = []
     for game in games_list:
@@ -79,11 +80,12 @@ def get_genres(games_list):
             all_genres.append(genre)
     return all_genres
 
+
 def get_top_genres(genres):
     genre_tally = {}
     for genre in genres:
         if genre in genre_tally:
-            genre_tally[genre] +=1
+            genre_tally[genre] += 1
         else:
             genre_tally[genre] = 1
 
@@ -125,9 +127,7 @@ while SUGGESTED_GAMES['ready_for_data']:
     games = get_games(USER_ID)
     print("Getting Game Info...")
     games_info = get_game_info(games)
-    game_titles = []
-    for game in games_info:
-        game_titles.append(game['title'])
+    game_titles = [game['title'] for game in games_info]
     print(f"\nYour Top 15 games: \n-  {"\n-  ".join(game_titles)}\n")
     print("Finding all game tags...")
     all_game_tags = get_tags(games_info)
