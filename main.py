@@ -1,4 +1,5 @@
 import os
+from tabulate import tabulate
 import requests
 from bs4 import BeautifulSoup
 from collections import defaultdict
@@ -46,7 +47,7 @@ def get_game_info(list):
         tags = []
         for tag in game_tags:
             tags.append(tag.text.strip())
-        games.append({'key': key, 'id': game['id'], 'title': game_name.text, 'url': game_url,
+        games.append({'key': key, 'id': game['id'], 'title': game_name.text, 'url': game_url, "time":game['time'],
                       'tags': tags, 'genres': genres})
 
     return games
@@ -81,7 +82,7 @@ def new_games(games):
             id = int(game['data-ds-appid'])
             if id not in new_game_ids:
                 new_game_ids.append(id)
-    return_games = [{"id":game} for game in new_game_ids]
+    return_games = [{"id":game,"time":0} for game in new_game_ids]
     return return_games
 
 
@@ -104,17 +105,18 @@ while USER_INFO['ready_for_data']:
     games = get_games(USER_INFO['id'])
     print("Getting Game Info...")
     USER_INFO['fave_games'] = get_game_info(games)
-    game_titles = [game['title'] for game in USER_INFO['fave_games']]
-    print(f"\nYour Top 15 games: \n-  {"\n-  ".join(game_titles)}\n")
+    game_table = [[game['title'], f"{round(int(game['time']) / 60)}hrs played"]for game in USER_INFO['fave_games']]
+    print(tabulate(game_table))
     print("Tallying tags...")
     USER_INFO['tags'] = favorite_tags(USER_INFO['fave_games'])
-    print(f"\nYour Top Ten tags: \n-  {'\n-  '.join(list(USER_INFO['tags'].keys()))}\n")
+    tags_table = [[tag,f"{number} games"] for tag,number in USER_INFO['tags'].items()]
+    print(tabulate(tags_table))
     print("Finding games based on your favorites...")
     new_game_suggestions = new_games(USER_INFO['fave_games'])
     print("Finding information on your suggestions...")
     new_games_info = get_game_info(new_game_suggestions)
     print("Ranking your suggestions...")
     USER_INFO['suggested_games'] = top_new_games(USER_INFO['fave_games'],new_games_info,USER_INFO['tags'])
-    suggested_games_titles= [game['title'] for game in USER_INFO['suggested_games']]
-    print(f"\nYour Top 15 suggested games: \n-  {"\n-  ".join(suggested_games_titles)}\n")
+    suggested_games_table = [[game['title'],", ".join(game['tags'])] for game in USER_INFO['suggested_games']]
+    print(tabulate(suggested_games_table))
     USER_INFO.update({"ready_for_data": False})
