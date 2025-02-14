@@ -1,6 +1,7 @@
 import os
-from tabulate import tabulate
+import click
 import requests
+from tabulate import tabulate
 from bs4 import BeautifulSoup
 from collections import defaultdict
 steam_key = os.environ['steam_key']
@@ -53,13 +54,6 @@ def get_game_info(list):
     return games
 
 
-def get_tags(games_list):
-    tags = []
-    for game in games_list:
-        for tag in game['tags']:
-            tags.append(tag)
-    return tags
-
 
 def favorite_tags(games_list):
     tag_counts = defaultdict(int)
@@ -96,27 +90,31 @@ def top_new_games(owned_games,games,tags):
     return_games = [game for game in sorted_games if game['id'] not in owned_simplified]
     return return_games[0:15]
 
-
-while USER_INFO['ready_for_data']:
-    user = input("Please input your Steam Username or id:\n")
-    print("Getting user info...")
-    USER_INFO['id'] = get_id(user)
-    print("Accessing User game list...")
-    games = get_games(USER_INFO['id'])
-    print("Getting Game Info...")
-    USER_INFO['fave_games'] = get_game_info(games)
-    game_table = [[game['title'], f"{round(int(game['time']) / 60)}hrs played"]for game in USER_INFO['fave_games']]
-    print(tabulate(game_table))
-    print("Tallying tags...")
-    USER_INFO['tags'] = favorite_tags(USER_INFO['fave_games'])
-    tags_table = [[tag,f"{number} games"] for tag,number in USER_INFO['tags'].items()]
-    print(tabulate(tags_table))
-    print("Finding games based on your favorites...")
-    new_game_suggestions = new_games(USER_INFO['fave_games'])
-    print("Finding information on your suggestions...")
+@click.command()
+@click.argument("username", required=False)
+@click.option("--verbose", is_flag=True, help="Enable detailed output")
+def main(username, verbose):
+    if not username:
+        username = click.prompt("Enter your Steam username or ID")
+    user_id = get_id(username)
+    if not user_id:
+        click.secho("Error: Could not resolve Steam ID. Check the username.", fg="red", bold=True)
+        return
+    click.secho(f"Fetching data for user: {username}...", fg="cyan")
+    games = get_games(user_id)
+    game_info = get_game_info(games)
+    game_table = [[game['title'], f"{round(int(game['time']) / 60)}hrs played"]for game in game_info]
+    click.secho("\nYour Top 15 Games:", fg="green", bold=True)
+    click.secho(tabulate(game_table))
+    tags = favorite_tags(game_info)
+    click.secho("\nYour Top 10 Tags:", fg="yellow", bold=True)
+    tags_table = [[tag, f"{number} games"] for tag, number in tags.items()]
+    click.secho(tabulate(tags_table))
+    new_game_suggestions = new_games(game_info)
     new_games_info = get_game_info(new_game_suggestions)
-    print("Ranking your suggestions...")
-    USER_INFO['suggested_games'] = top_new_games(USER_INFO['fave_games'],new_games_info,USER_INFO['tags'])
-    suggested_games_table = [[game['title'],", ".join(game['tags'])] for game in USER_INFO['suggested_games']]
+    suggested_games = top_new_games(game_info,new_games_info,tags)
+    suggested_games_table = [[game['title'], ", ".join(game['tags'])] for game in suggested_games]
     print(tabulate(suggested_games_table))
-    USER_INFO.update({"ready_for_data": False})
+
+if __name__ == "__main__":
+    main()
