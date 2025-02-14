@@ -1,8 +1,7 @@
 import os
-
 import requests
 from bs4 import BeautifulSoup
-
+from collections import defaultdict
 steam_key = os.environ['steam_key']
 
 USER_INFO = {"ready_for_data": True}
@@ -54,21 +53,19 @@ def get_game_info(list):
 
 
 def get_tags(games_list):
-    all_tags = []
+    tags = []
     for game in games_list:
         for tag in game['tags']:
-            all_tags.append(tag)
-    return all_tags
+            tags.append(tag)
+    return tags
 
 
-def favorite_tags(tag_list):
-    tags_tally = {}
-    for tag in tag_list:
-        if tag in tags_tally:
-            tags_tally[tag] += 1
-        else:
-            tags_tally[tag] = 1
-    sorted_tally = sorted(tags_tally.items(), key=lambda item: item[1], reverse=True)
+def favorite_tags(games_list):
+    tag_counts = defaultdict(int)
+    for game in games_list:
+        for tag in game['tags']:
+         tag_counts[tag] += 1
+    sorted_tally = sorted(tag_counts.items(), key=lambda item: item[1], reverse=True)
     return dict(sorted_tally[0:10])
 
 
@@ -109,10 +106,8 @@ while USER_INFO['ready_for_data']:
     USER_INFO['fave_games'] = get_game_info(games)
     game_titles = [game['title'] for game in USER_INFO['fave_games']]
     print(f"\nYour Top 15 games: \n-  {"\n-  ".join(game_titles)}\n")
-    print("Finding all game tags...")
-    all_game_tags = get_tags(USER_INFO['fave_games'])
     print("Tallying tags...")
-    USER_INFO['tags'] = favorite_tags(all_game_tags)
+    USER_INFO['tags'] = favorite_tags(USER_INFO['fave_games'])
     print(f"\nYour Top Ten tags: \n-  {'\n-  '.join(list(USER_INFO['tags'].keys()))}\n")
     print("Finding games based on your favorites...")
     new_game_suggestions = new_games(USER_INFO['fave_games'])
