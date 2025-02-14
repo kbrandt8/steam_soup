@@ -4,7 +4,7 @@ import requests
 from tabulate import tabulate
 from bs4 import BeautifulSoup
 from collections import defaultdict
-steam_key = os.environ['steam_key']
+STEAM_KEY = os.environ['STEAM_KEY']
 
 USER_INFO = {"ready_for_data": True}
 
@@ -12,14 +12,14 @@ def get_id(username):
     if username.isnumeric():
         return username
     else:
-        user_id_url = f"https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key={steam_key}&vanityurl={username}"
+        user_id_url = f"https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key={STEAM_KEY}&vanityurl={username}"
         find_id = requests.get(user_id_url)
         user_id = find_id.json()['response']['steamid']
         return user_id
 
 
 def get_games(USER_ID):
-    games_url = f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={steam_key}&steamid={USER_ID}&format=json"
+    games_url = f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={STEAM_KEY}&steamid={USER_ID}&format=json"
     games_request = requests.get(games_url)
     all_games = games_request.json()['response']['games']
     games_list = [{"id": game['appid'], "time": game['playtime_forever']} for game in all_games]
