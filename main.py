@@ -58,9 +58,6 @@ def get_games(USER_ID):
 def get_game_info(list, bar=None, label=""):
     games = []
 
-    fill_char = click.style("♥", fg="red")
-    empty_char = click.style("♡", fg="white", dim=True)
-
     for key, game in enumerate(list):
         game_url = f"https://store.steampowered.com/app/{game['id']}/"
         get_game_data = requests.get(game_url)
