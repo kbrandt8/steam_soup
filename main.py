@@ -1,3 +1,4 @@
+import functools
 import os
 from collections import defaultdict
 
@@ -13,7 +14,27 @@ STEAM_KEY = os.environ['STEAM_KEY']
 USER_INFO = {"ready_for_data": True}
 
 
-def get_id(username):
+def progress_bar(length=None):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            label = kwargs.get("label", "Processing...")
+
+            iterable = args[0] if args else kwargs.get("data", [])
+            total = length or len(iterable)
+
+            fill_char = click.style("♥", fg="red")
+            empty_char = click.style("♡", fg="white", dim=True)
+
+            with click.progressbar(length=total, label=label, fill_char=fill_char, empty_char=empty_char) as bar:
+                return func(*args, **kwargs, bar=bar)  # Pass progress bar to function
+
+        return wrapper
+
+    return decorator
+
+
+def get_id(username, bar=None):
     if username.isnumeric():
         return username
     else:
@@ -33,37 +54,34 @@ def get_games(USER_ID):
     return top_games
 
 
-def get_game_info(list, label="Getting game info..."):
+@progress_bar()
+def get_game_info(list, bar=None, label=""):
     games = []
 
     fill_char = click.style("♥", fg="red")
     empty_char = click.style("♡", fg="white", dim=True)
 
-    with click.progressbar(length=15,
-                           label=label,
-                           fill_char=fill_char,
-                           empty_char=empty_char) as bar:
-        for key, game in enumerate(list):
-            game_url = f"https://store.steampowered.com/app/{game['id']}/"
-            get_game_data = requests.get(game_url)
-            soup = BeautifulSoup(get_game_data.content, "html.parser")
-            game_tags = soup.find_all('a', attrs={'class': 'app_tag'})
-            game_genres = soup.find('div', attrs={'id': 'genresAndManufacturer'})
-            all_genres = game_genres.find_all('span')
-            genres = []
-            for genre in all_genres:
-                text = genre.text
-                new_list = text.split(",")
-                for item in new_list:
-                    genres.append(item.strip())
+    for key, game in enumerate(list):
+        game_url = f"https://store.steampowered.com/app/{game['id']}/"
+        get_game_data = requests.get(game_url)
+        soup = BeautifulSoup(get_game_data.content, "html.parser")
+        game_tags = soup.find_all('a', attrs={'class': 'app_tag'})
+        game_genres = soup.find('div', attrs={'id': 'genresAndManufacturer'})
+        all_genres = game_genres.find_all('span')
+        genres = []
+        for genre in all_genres:
+            text = genre.text
+            new_list = text.split(",")
+            for item in new_list:
+                genres.append(item.strip())
 
-            game_name = soup.find('div', attrs={'id': 'appHubAppName_responsive'})
-            tags = []
-            for tag in game_tags:
-                tags.append(tag.text.strip())
-            games.append({'key': key, 'id': game['id'], 'title': game_name.text, 'url': game_url, "time": game['time'],
-                          'tags': tags, 'genres': genres})
-            bar.update(1)
+        game_name = soup.find('div', attrs={'id': 'appHubAppName_responsive'})
+        tags = []
+        for tag in game_tags:
+            tags.append(tag.text.strip())
+        games.append({'key': key, 'id': game['id'], 'title': game_name.text, 'url': game_url, "time": game['time'],
+                      'tags': tags, 'genres': genres})
+        bar.update(1)
 
     return games
 
@@ -92,25 +110,19 @@ def new_games(games):
     return return_games
 
 
-def top_new_games(owned_games, games, tags, label=""):
+@progress_bar()
+def top_new_games(owned_games, games, tags, bar=None, label=""):
     new_games = []
-    fill_char = click.style("♥", fg="red")
-    empty_char = click.style("♡", fg="white", dim=True)
-
-    with click.progressbar(length=30,
-                           label=label,
-                           fill_char=fill_char,
-                           empty_char=empty_char) as bar:
-        for game in games:
-            games_tags = list(set(game['tags']) & set(tags))
-            new_games.append({"title": game['title'], "id": game['id'], "tags": games_tags})
-            bar.update(1)
-        sorted_games = sorted(new_games, key=lambda x: len(x['tags']), reverse=True)
-        bar.update(5)
-        owned_simplified = [game['id'] for game in owned_games]
-        bar.update(5)
-        return_games = [game for game in sorted_games if game['id'] not in owned_simplified]
-        bar.update(5)
+    for game in games:
+        games_tags = list(set(game['tags']) & set(tags))
+        new_games.append({"title": game['title'], "id": game['id'], "tags": games_tags})
+        bar.update(1)
+    sorted_games = sorted(new_games, key=lambda x: len(x['tags']), reverse=True)
+    bar.update(5)
+    owned_simplified = [game['id'] for game in owned_games]
+    bar.update(5)
+    return_games = [game for game in sorted_games if game['id'] not in owned_simplified]
+    bar.update(5)
 
     return return_games[0:15]
 
@@ -127,7 +139,7 @@ def main(username, verbose):
         return
     click.secho(f"Fetching data for user: {username}...", fg="cyan")
     games = get_games(user_id)
-    game_info = get_game_info(games, "Getting info on games list...")
+    game_info = get_game_info(games, label="Getting info on games list...")
     game_table = [[game['title'], f"{round(int(game['time']) / 60)}hrs played"] for game in game_info]
     click.secho("\nYour Top 15 Games:", fg="green", bold=True)
     click.secho(tabulate(game_table))
@@ -136,8 +148,8 @@ def main(username, verbose):
     tags_table = [[tag, f"{number} games"] for tag, number in tags.items()]
     click.secho(tabulate(tags_table))
     new_game_suggestions = new_games(game_info)
-    new_games_info = get_game_info(new_game_suggestions, "Getting info on game suggestions...")
-    suggested_games = top_new_games(game_info, new_games_info, tags, "Sorting game suggestions...")
+    new_games_info = get_game_info(new_game_suggestions, label="Getting info on game suggestions...")
+    suggested_games = top_new_games(game_info, new_games_info, tags, label="Sorting game suggestions...")
     suggested_games_table = [[game['title'], ", ".join(game['tags'])] for game in suggested_games]
     print(tabulate(suggested_games_table))
 
