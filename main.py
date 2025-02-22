@@ -186,5 +186,3 @@ def main(username, clear_cache):
     click.secho(tabulate(suggested_games_table, headers=["Game Title","Tags from Your Top Tags"],tablefmt="fancy_grid"))
     save_results(suggested_games)
 
-if __name__ == "__main__":
-    main()
