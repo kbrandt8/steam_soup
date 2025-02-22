@@ -155,6 +155,7 @@ def main(username, clear_cache):
     if not user_id:
         click.secho("Error: Could not resolve Steam ID. Check the username.", fg="red", bold=True)
         return
+    click.secho(f"Fetching data for user: {username}...", fg="cyan")
 
     user_file_path = f"{user_id}_user_info.json"
     if clear_cache and os.path.exists(user_file_path):
@@ -170,19 +171,21 @@ def main(username, clear_cache):
         click.secho(f"Fetching data for user: {username}...", fg="cyan")
         games = get_games(user_id)
         game_info = get_game_info(games, label="Getting info on games list...")
-        game_table = [[game['title'], f"{round(int(game['time']) / 60)}"] for game in game_info]
+        game_table = [[game['title'], f"{round(int(game['time']) / 60)}hrs played"] for game in game_info]
         click.secho("\nYour Top 15 Games:", fg="green", bold=True)
-        click.secho(tabulate(game_table,headers=["Game Title", "Hours Played"], tablefmt="fancy_grid"))
+        click.secho(tabulate(game_table))
         tags = favorite_tags(game_info)
         click.secho("\nYour Top 10 Tags:", fg="yellow", bold=True)
-        tags_table = [[tag, number] for tag, number in tags.items()]
-        click.secho(tabulate(tags_table,headers=["Tag", "Number of Games"], tablefmt="fancy_grid"))
+        tags_table = [[tag, f"{number} games"] for tag, number in tags.items()]
+        click.secho(tabulate(tags_table))
         save_user(username,user_id,game_info,tags)
 
     new_game_suggestions = new_games(USER_INFO['top_games'])
     new_games_info = get_game_info(new_game_suggestions, label="Getting info on game suggestions...")
     suggested_games = top_new_games(USER_INFO['top_games'], new_games_info, USER_INFO['top_tags'], label="Sorting game suggestions...")
-    suggested_games_table = [[game['title'], "\n".join(game['tags'])] for game in suggested_games]
-    click.secho(tabulate(suggested_games_table, headers=["Game Title","Tags from Your Top Tags"],tablefmt="fancy_grid"))
+    suggested_games_table = [[game['title'], ", ".join(game['tags'])] for game in suggested_games]
+    click.secho(tabulate(suggested_games_table))
     save_results(suggested_games)
 
+if __name__ == "__main__":
+    main()
