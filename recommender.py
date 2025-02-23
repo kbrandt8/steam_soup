@@ -3,27 +3,34 @@ from collections import defaultdict
 from utils import progress_bar
 
 
-def favorite_tags(games_list):
+def favorite_tags(games_list: list[dict[str, any]]) -> dict[str, int]:
+    """Creates a tally for users tags, and sorts them by most often seen in favorite games"""
     tag_counts = defaultdict(int)
+
     for game in games_list:
         for tag in game['tags']:
             tag_counts[tag] += 1
+
     sorted_tally = sorted(tag_counts.items(), key=lambda item: item[1], reverse=True)
-    return dict(sorted_tally[0:10])
+    return dict(sorted_tally[0:10])  # Only returns top 10 tags
 
 
 @progress_bar()
-def top_new_games(owned_games, games, tags, bar=None, label=""):
-    new_games = []
-    for game in games:
-        games_tags = list(set(game['tags']) & set(tags))
-        new_games.append({"title": game['title'], "id": game['id'], "tags": games_tags})
-        bar.update(1)
-    sorted_games = sorted(new_games, key=lambda x: len(x['tags']), reverse=True)
-    bar.update(5)
-    owned_simplified = [game['id'] for game in owned_games]
-    bar.update(5)
-    return_games = [game for game in sorted_games if game['id'] not in owned_simplified]
-    bar.update(5)
+def top_new_games(owned_games: list[dict[str,list[str]]],
+                  games: list[dict[str, list[str]]],
+                  tags: dict[str, int], bar=None, label="") \
+        -> list[dict[str, list]]:
+    """Sorts games by how many of the users favorite tags it has."""
+    owned_game_ids = [game['id'] for game in owned_games]
+    if bar:
+        bar.update(5)
+    ranked_games = [
+        {"title": game['title'], "id": game['id'], "tags": list(set(game['tags']) & set(tags))}
+        for game in games]
+    if bar:
+        bar.update(5)
+    sorted_games = sorted(ranked_games, key=lambda x: len(x['tags']), reverse=True)
+    if bar:
+        bar.update(5)
 
-    return return_games[0:15]
+    return [game for game in sorted_games if game['id'] not in owned_game_ids][:15]  # Exclude owned games
