@@ -1,16 +1,17 @@
 import functools
 import os
 from collections import defaultdict
-import json
+
 import click
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from tabulate import tabulate
 
+from steam_user import SteamUser
+
 load_dotenv()
 STEAM_KEY = os.environ['STEAM_KEY']
-USER_INFO = {}
 
 
 def progress_bar(length=None):
@@ -31,16 +32,6 @@ def progress_bar(length=None):
         return wrapper
 
     return decorator
-
-
-def get_id(username, bar=None):
-    if username.isnumeric():
-        return username
-    else:
-        user_id_url = f"https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key={STEAM_KEY}&vanityurl={username}"
-        find_id = requests.get(user_id_url)
-        user_id = find_id.json()['response']['steamid']
-        return user_id
 
 
 def get_games(USER_ID):
@@ -122,70 +113,48 @@ def top_new_games(owned_games, games, tags, bar=None, label=""):
 
     return return_games[0:15]
 
-def save_results(data, filename="steam_recommendations.json"):
-    with open (filename, "w",encoding="utf-8") as f:
-        json.dump(data,f,indent=4)
-    click.secho(f"View results in {filename}")
-
-def save_user(user, id, top_games, top_tags):
-    global USER_INFO
-    filename = f"{id}_user_info.json"
-    data = {
-        "user":user,
-        "id":id,
-        "top_tags":top_tags,
-        "top_games": top_games
-    }
-    USER_INFO = data
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(data,f,indent=4)
-    return filename
-
-
 
 @click.command()
 @click.argument("username", required=False)
-@click.option("--clear-cache", is_flag=True,help="Delete cached user data and fetch fresh data")
+@click.option("--clear-cache", is_flag=True, help="Delete cached user data and fetch fresh data")
 def main(username, clear_cache):
-    global USER_INFO
     if not username:
         username = click.prompt("Enter your Steam username or ID")
-    user_id = get_id(username)
-    if not user_id:
+
+    user = SteamUser(username)
+
+    if not user.user_id:
         click.secho("Error: Could not resolve Steam ID. Check the username.", fg="red", bold=True)
         return
 
-    user_file_path = f"{user_id}_user_info.json"
-    if clear_cache and os.path.exists(user_file_path):
-        os.remove(user_file_path)
-        os.remove("steam_recommendations.json")
-        click.secho("Cache cleared. Fetching fresh data...", fg="yellow")
+    if clear_cache and os.path.exists(user.user_file_path):
+        user.clear_cache()
 
-    elif os.path.exists(user_file_path):
-        click.secho("Found User Information...", fg="cyan", bold=True)
-        with open(user_file_path,'r') as f:
-            data=json.load(f)
-            USER_INFO= data
+    if os.path.exists(user.user_file_path):
+        user.use_saved_user()
+
     else:
         click.secho(f"Fetching data for user: {username}...", fg="cyan")
-        games = get_games(user_id)
-        game_info = get_game_info(games, label="Getting info on games list...")
-        game_table = [[game['title'], f"{round(int(game['time']) / 60)}"] for game in game_info]
+        games = get_games(user.user_id)
+        user.top_games = get_game_info(games, label="Getting info on games list...")
+        game_table = [[game['title'], f"{round(int(game['time']) / 60)}"] for game in user.top_games]
         click.secho("\nYour Top 15 Games:", fg="green", bold=True)
-        click.secho(tabulate(game_table, tablefmt="fancy_grid",headers=['Game Title','Hours Played']))
-        tags = favorite_tags(game_info)
+        click.secho(tabulate(game_table, tablefmt="fancy_grid", headers=['Game Title', 'Hours Played']))
+        user.top_tags = favorite_tags(user.top_games)
         click.secho("\nYour Top 10 Tags:", fg="yellow", bold=True)
-        tags_table = [[tag, f"{number}"] for tag, number in tags.items()]
-        click.secho(tabulate(tags_table,tablefmt="fancy_grid",headers=['Tag','# of Games with Tag']))
-        save_user(username,user_id,game_info,tags)
+        tags_table = [[tag, f"{number}"] for tag, number in user.top_tags.items()]
+        click.secho(tabulate(tags_table, tablefmt="fancy_grid", headers=['Tag', '# of Games with Tag']))
+        user.save_user()
 
-
-    new_game_suggestions = new_games(USER_INFO['top_games'])
+    new_game_suggestions = new_games(user.top_games)
     new_games_info = get_game_info(new_game_suggestions, label="Getting info on game suggestions...")
-    suggested_games = top_new_games(USER_INFO['top_games'], new_games_info, USER_INFO['top_tags'], label="Sorting game suggestions...")
-    suggested_games_table = [[game['title'], "\n ".join(game['tags'])] for game in suggested_games]
-    click.secho(tabulate(suggested_games_table, tablefmt="fancy_grid",headers=['Game Title','Tags from your Top Tags']))
-    save_results(suggested_games)
+    user.user_recommendations = top_new_games(user.top_games, new_games_info, user.top_tags,
+                                              label="Sorting game suggestions...")
+    suggested_games_table = [[game['title'], "\n ".join(game['tags'])] for game in user.user_recommendations]
+    click.secho(
+        tabulate(suggested_games_table, tablefmt="fancy_grid", headers=['Game Title', 'Tags from your Top Tags']))
+    user.save_recommendations()
+
 
 if __name__ == "__main__":
     main()
