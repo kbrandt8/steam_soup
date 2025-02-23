@@ -46,7 +46,7 @@ def main(username, clear_cache):
     new_games_info = get_game_info(new_game_suggestions, label="Getting info on game suggestions...")
     user.user_recommendations = top_new_games(user.top_games, new_games_info, user.top_tags,
                                               label="Sorting game suggestions...")
-    suggested_games_table = [[game['title'], "\n ".join(game['tags'])] for game in user.user_recommendations]
+    suggested_games_table = [[game['title'], "\n".join(game['tags'])] for game in user.user_recommendations]
     click.secho(
         tabulate(suggested_games_table, tablefmt="fancy_grid", headers=['Game Title', 'Tags from your Top Tags']))
     user.save_recommendations()
