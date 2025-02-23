@@ -5,7 +5,7 @@ from utils import progress_bar
 
 
 @progress_bar()
-def get_game_info(games:list[dict[str,int]], bar=None, label="")-> list[dict[str,list[str]]]:
+def get_game_info(games:list[str,int,any], bar=None, label="")-> list[dict[str,list[str]]]:
     """Scrapes Steam Store to retrieve name, tags, and genres for a given list of games."""
     scraped_games = []
 
@@ -38,7 +38,7 @@ def get_game_info(games:list[dict[str,int]], bar=None, label="")-> list[dict[str
 
 
 @progress_bar()
-def new_games(games:list[dict[str,list[str]]], bar=None, label="")->list[dict[str,int]]:
+def new_games(games:list[str,int], bar=None, label="")->list[dict[str,int]]:
     """Finds the games marked as similar to any list of games."""
     new_game_ids = []
     for game in games:

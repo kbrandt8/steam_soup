@@ -16,8 +16,8 @@ def favorite_tags(games_list: list[dict[str, any]]) -> dict[str, int]:
 
 
 @progress_bar()
-def top_new_games(owned_games: list[dict[str,list[str]]],
-                  games: list[dict[str, list[str]]],
+def top_new_games(owned_games: list[str, any],
+                  games: list[str, list],
                   tags: dict[str, int], bar=None, label="") \
         -> list[dict[str, list]]:
     """Sorts games by how many of the users favorite tags it has."""
