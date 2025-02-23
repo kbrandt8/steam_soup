@@ -81,8 +81,8 @@ class SteamUser:
         except (IOError, json.JSONDecodeError):
             raise ValueError("Error: Failed to load saved user data.")
         except ValueError as e:
-            click.secho(f"Error: {e} \n Try again with --clear-cache for new information", fg="red", bold=True)
-            return False
+            raise ValueError(f"Error: {e} \n Try again with --clear-cache for new information")
+
 
     def clear_cache(self):
         """Delete saved user data and recommendations"""

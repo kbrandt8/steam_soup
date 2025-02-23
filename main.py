@@ -20,13 +20,12 @@ def main(username, clear_cache):
     if not user.user_id:
         click.secho("Error: Could not resolve Steam ID. Check the username.", fg="red", bold=True)
         return
-
     if clear_cache and os.path.exists(user.user_file_path):
         user.clear_cache()
 
     if os.path.exists(user.user_file_path):
-        if not user.use_saved_user():
-            return
+        user.use_saved_user()
+
 
     else:
         click.secho(f"Fetching data for user: {username}...", fg="cyan")
@@ -43,7 +42,7 @@ def main(username, clear_cache):
         click.secho(tabulate(tags_table, tablefmt="fancy_grid", headers=['Tag', '# of Games with Tag']))
         user.save_user()
 
-    new_game_suggestions = new_games(user.top_games,"Finding games similar to your favorites...")
+    new_game_suggestions = new_games(user.top_games,label="Finding games similar to your favorites...")
     new_games_info = get_game_info(new_game_suggestions, label="Getting info on game suggestions...")
     user.user_recommendations = top_new_games(user.top_games, new_games_info, user.top_tags,
                                               label="Sorting game suggestions...")
