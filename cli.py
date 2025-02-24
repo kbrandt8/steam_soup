@@ -2,9 +2,8 @@ import os
 
 import click
 
-from cli_helpers import fetch_user_data, generate_game_recommendations, display_top_games,get_saved_users
+from cli_helpers import fetch_user_data, generate_game_recommendations, display_top_games,get_saved_users,welcome_message,display_menu
 from steam_user import SteamUser
-from utils import welcome_message
 
 
 @click.command()
@@ -15,7 +14,7 @@ from utils import welcome_message
 def main(username, clear_cache, game_recs, top_games_tags):
     """Main CLI function to fetch and display Steam user data."""
     welcome_message()
-    # Prompt user for username if nort provided.
+
     if not username:
         username = get_saved_users()
 
@@ -46,4 +45,17 @@ def main(username, clear_cache, game_recs, top_games_tags):
     # Generate and display game recommendations if requested
     if game_recs:
         generate_game_recommendations(user)
+
+    while True:
+        display_menu(user)
+        selection= int(click.prompt("Enter selection"))
+        if selection == 3:
+            click.secho("\n👋 Exiting Steam Soup. Have a great day! 🎮", fg="magenta", bold=True)
+            break
+        elif selection == 2:
+            generate_game_recommendations(user)
+        elif selection == 1:
+            display_top_games(user)
+        click.pause("\n⏳ Press Enter to continue...\n")  # Prevents auto-restarting instantly
+
 

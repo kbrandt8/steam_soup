@@ -20,12 +20,4 @@ def progress_bar(length=None):
 
     return decorator
 
-def welcome_message():
-    """Displays a welcome message when the program starts."""
-    click.clear()  # Clears the terminal for a clean display
-
-    click.secho("🌊━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌊", fg="cyan", bold=True)
-    click.secho("        🎮  WELCOME TO STEAM SOUP  🎮        ", fg="magenta", bold=True)
-    click.secho("🌊━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌊\n", fg="cyan", bold=True)
-
 

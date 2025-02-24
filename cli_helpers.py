@@ -8,6 +8,31 @@ from tabulate import tabulate
 from recommender import favorite_tags, top_new_games
 from scraper import get_game_info, new_games
 
+def welcome_message():
+    """Displays a welcome message when the program starts."""
+    click.clear()  # Clears the terminal for a clean display
+
+    click.secho("🌊━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌊", fg="cyan", bold=True)
+    click.secho("        🎮  WELCOME TO STEAM SOUP  🎮        ", fg="magenta", bold=True)
+    click.secho("🌊━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌊\n", fg="cyan", bold=True)
+
+
+def display_menu(user):
+    """Displays an interactive menu for the user."""
+    click.clear()  # Clears terminal for a fresh display
+
+    click.secho("🌊━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌊", fg="cyan", bold=True)
+    click.secho(f"       🎮 Viewing Information for: {user.username} 🎮", fg="magenta", bold=True)
+    click.secho("🌊━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌊\n", fg="cyan", bold=True)
+
+    click.secho("🔍 What would you like to do?", fg="yellow", bold=True)
+    click.secho("1️⃣  **User Stats** - View your top tags and most played games.", fg="green")
+    click.secho("2️⃣  **Game Recs** - Generate and view recommendations based on your Steam library.", fg="blue")
+    click.secho("3️⃣  **Exit** - Close the application.", fg="red")
+
+    click.secho("\n💡 Type the number of your choice and press Enter.", fg="white", bold=True)
+
+
 
 def fetch_user_data(user):
     """Fetch and store user top played games and top tags if no json data is found"""
