@@ -2,7 +2,7 @@ import os
 
 import click
 
-from cli_helpers import fetch_user_data, generate_game_recommendations, display_top_games
+from cli_helpers import fetch_user_data, generate_game_recommendations, display_top_games,get_saved_users
 from steam_user import SteamUser
 from utils import welcome_message
 
@@ -17,7 +17,13 @@ def main(username, clear_cache, game_recs, top_games_tags):
     welcome_message()
     # Prompt user for username if nort provided.
     if not username:
+        username = get_saved_users()
+
+    # Prompt user for username if not provided.
+    if not username:
         username = click.prompt("Enter your Steam username or ID")
+
+
 
     user = SteamUser(username)
 

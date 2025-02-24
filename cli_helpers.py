@@ -1,3 +1,5 @@
+import glob
+import json
 import os
 
 import click
@@ -44,3 +46,17 @@ def display_top_games(user):
 
     click.secho("\n🏷️ Your Top 10 Tags:", fg="yellow", bold=True)
     click.secho(tabulate(tags_table, tablefmt="fancy_grid", headers=['Tag', '# of Games with Tag']))
+
+
+def get_saved_users():
+    all_users = glob.glob(os.path.join('*_user_info.json'), recursive=True)
+    if len(all_users) == 1:
+        user= all_users[0]
+        with open(user, 'r') as u:
+            data = json.load(u)
+            username = data.get('user')
+            id = data.get('id')
+            if click.confirm(f"Found user info for {username}, proceed with this account?"):
+                return id
+    else:
+        return False
