@@ -16,6 +16,7 @@ class SteamUser:
         self.top_games = []
         self.top_tags = {}
         self.user_recommendations = []
+        self.user_stats = []
         self.user_file_path = f"{self.user_id}_user_info.json"
         self.user_rec_path = f"{self.user_id}_recommendations"
 
@@ -103,3 +104,55 @@ class SteamUser:
             click.secho(f"View results in {self.user_rec_path}")
         except (IOError, json.JSONDecodeError):
             click.secho("Error: Failed to save recommendations.", fg="red")
+
+    def get_user_stats(self,app):
+        """Fetch the user's achievements for a given game."""
+        url = f"http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid={app}&key={STEAM_KEY}&steamid={self.user_id}"
+        try:
+            response =  requests.get(url)
+            response.raise_for_status()  # Ensure the request was successful
+            player_stats = response.json().get("playerstats")
+            #Only return achievements if request was successful
+            return player_stats.get("achievements") if player_stats.get("success") else []
+        except requests.RequestException:
+            return [] # return empty list if request fails
+
+    def get_statistics(self):
+        """Calculates the user's achievement completion percentage for their top games."""
+        for game in self.top_games:
+            user_stats = self.get_user_stats(game['id'])
+
+            if user_stats: # proceed only if there are achievements
+                # list of achievements
+                achievements = [item['apiname'] for item in user_stats if item.get("achieved")]
+                # calculate percentage of unlocked achievements
+                percentage = round(len(achievements)/len(user_stats) * 100,2) if user_stats else 0
+                # store the achievement percentage for the game
+                self.user_stats.append({'title': game['title'], 'achieved': percentage})
+
+    def game_news(self,game_id):
+        """Fetch the latest news articles for a given game from the Steam API."""
+        url=f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v0002/?appid={game_id}&count=3&maxlength=300&format=json"
+        try:
+            response = requests.get(url)
+            response.raise_for_status() #ensure request was successful
+            news = response.json().get("appnews").get("newsitems")
+            return news
+        except requests.RequestException:
+            return [] # Return an empty list if request fails
+
+    def get_news(self):
+        """Retrieve the latest news articles for the user's top games."""
+        news = []
+        for game in self.top_games:
+            articles = self.game_news(game['id'])
+            if articles: #Ensure articles exist
+                news.append({
+                   "game":game['title'],
+                    "title":articles[0]['title'],  # Only fetch the latest article
+                    "url":articles[0]['url']
+                })
+        return news
+
+
+

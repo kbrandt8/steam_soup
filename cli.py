@@ -2,7 +2,7 @@ import os
 
 import click
 
-from cli_helpers import fetch_user_data, generate_game_recommendations, display_top_games,get_saved_users,welcome_message,display_menu
+from cli_helpers import fetch_user_data, generate_game_recommendations, display_top_games,get_saved_users,welcome_message,display_menu,get_player_news,get_player_statistics
 from steam_user import SteamUser
 
 
@@ -46,12 +46,17 @@ def main(username, clear_cache, game_recs, top_games_tags):
     if game_recs:
         generate_game_recommendations(user)
 
+
     while True:
         display_menu(user)
         selection= int(click.prompt("Enter selection"))
-        if selection == 3:
+        if selection == 5:
             click.secho("\n👋 Exiting Steam Soup. Have a great day! 🎮", fg="magenta", bold=True)
             break
+        elif selection == 4:
+            get_player_statistics(user)
+        elif selection == 3:
+            get_player_news(user)
         elif selection == 2:
             generate_game_recommendations(user)
         elif selection == 1:

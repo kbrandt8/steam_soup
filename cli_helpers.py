@@ -8,6 +8,7 @@ from tabulate import tabulate
 from recommender import favorite_tags, top_new_games
 from scraper import get_game_info, new_games
 
+
 def welcome_message():
     """Displays a welcome message when the program starts."""
     click.clear()  # Clears the terminal for a clean display
@@ -28,10 +29,11 @@ def display_menu(user):
     click.secho("🔍 What would you like to do?", fg="yellow", bold=True)
     click.secho("1️⃣  **User Stats** - View your top tags and most played games.", fg="green")
     click.secho("2️⃣  **Game Recs** - Generate and view recommendations based on your Steam library.", fg="blue")
-    click.secho("3️⃣  **Exit** - Close the application.", fg="red")
+    click.secho("3️⃣  **News** - Get news on your top games",fg="magenta")
+    click.secho("4️⃣  **User Stats** - Find where you rank in your game achievements",fg="yellow")
+    click.secho("5️⃣       **Exit** - Close the application.", fg="red")
 
     click.secho("\n💡 Type the number of your choice and press Enter.", fg="white", bold=True)
-
 
 
 def fetch_user_data(user):
@@ -76,7 +78,7 @@ def display_top_games(user):
 def get_saved_users():
     all_users = glob.glob(os.path.join('*_user_info.json'), recursive=True)
     if len(all_users) == 1:
-        user= all_users[0]
+        user = all_users[0]
         with open(user, 'r') as u:
             data = json.load(u)
             username = data.get('user')
@@ -85,3 +87,17 @@ def get_saved_users():
                 return id
     else:
         return False
+
+
+def get_player_news(user):
+    articles = user.get_news()
+    for article in articles:
+        click.secho(f"🎮 {article['game']}:",fg="magenta")
+        click.secho(f"{article['title']}",fg="cyan")
+        click.secho(f"\n🔗Read here: {article['url']}\n\n")
+
+def get_player_statistics(user):
+    user.get_statistics()
+    stats_table = [[game['title'], f"{game['achieved']}%"]for game in user.user_stats]
+    click.secho(tabulate(stats_table, tablefmt="fancy_grid", headers=['Game', '% of completed achievements']))
+
