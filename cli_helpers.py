@@ -27,11 +27,11 @@ def display_menu(user):
     click.secho("🌊━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌊\n", fg="cyan", bold=True)
 
     click.secho("🔍 What would you like to do?", fg="yellow", bold=True)
-    click.secho("1️⃣  **User Stats** - View your top tags and most played games.", fg="green")
-    click.secho("2️⃣  **Game Recs** - Generate and view recommendations based on your Steam library.", fg="blue")
-    click.secho("3️⃣  **News** - Get news on your top games",fg="magenta")
-    click.secho("4️⃣  **User Stats** - Find where you rank in your game achievements",fg="yellow")
-    click.secho("5️⃣       **Exit** - Close the application.", fg="red")
+    click.secho("1️⃣  User Stats - View your top tags and most played games.", fg="green")
+    click.secho("2️⃣  Game Recs - Generate and view recommendations based on your Steam library.", fg="blue")
+    click.secho("3️⃣  News - Get news on your top games",fg="magenta")
+    click.secho("4️⃣  User Achievements - Find where you rank in your game achievements",fg="yellow")
+    click.secho("5️⃣  Exit - Close the application.", fg="red")
 
     click.secho("\n💡 Type the number of your choice and press Enter.", fg="white", bold=True)
 
